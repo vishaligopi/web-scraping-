@@ -1,0 +1,52 @@
+pip install requests beautifulsoup4 pandas
+
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+
+url = "https://books.toscrape.com/"
+response = requests.get(url)
+
+print(response.status_code)
+
+soup = BeautifulSoup(response.text, 'html.parser')
+
+products = soup.find_all('article', class_='product_pod')
+
+book_names = []
+prices = []
+ratings = []
+
+for product in products:
+    name = product.h3.a['title']
+    price = product.find('p', class_='price_color').text
+    rating = product.p['class'][1]
+
+    book_names.append(name)
+    prices.append(price)
+    ratings.append(rating)
+
+    data = pd.DataFrame({
+    'Book Name': book_names,
+    'Price': prices,
+    'Rating': ratings
+})
+
+data.head()
+
+data['Price'] = data['Price'].str.replace(r'[^\d.]', '', regex=True).astype(float)
+
+data.to_csv('books_data.csv', index=False)
+
+print(data.describe())
+
+data['Rating'].value_counts()
+
+import matplotlib.pyplot as plt
+
+data['Rating'].value_counts().plot(kind='bar')
+plt.title("Book Rating Distribution")
+plt.xlabel("Rating")
+plt.ylabel("Count")
+plt.show()
+
